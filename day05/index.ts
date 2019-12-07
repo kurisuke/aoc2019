@@ -6,6 +6,10 @@ import { readFile } from "fs";
 // 2 - mul
 // 3 - input
 // 4 - output
+// 5 - jnz
+// 6 - jz
+// 7 - lt
+// 8 - eq
 // 99 - halt
 
 enum ParamMode {
@@ -14,8 +18,8 @@ enum ParamMode {
 }
 
 function inp() {
-    console.log("Input: 1");
-    return 1;
+    console.log("Input: 5");
+    return 5;
 }
 
 function outp(x: number) {
@@ -57,6 +61,48 @@ function op(pos: number[], pc: number) {
             // console.log(`pc: ${pc} -- OUT ${p1}`);
             outp(p1);
             pc += 2;
+            break;
+        }
+        case 5: { // jnz
+            const p1 = paramMode[0] === ParamMode.Immediate ? pos[pc + 1] : pos[pos[pc + 1]];
+            const p2 = paramMode[1] === ParamMode.Immediate ? pos[pc + 2] : pos[pos[pc + 2]];
+            if (p1 !== 0) {
+                pc = p2;
+            } else {
+                pc += 3;
+            }
+            break;
+        }
+        case 6: { // jz
+            const p1 = paramMode[0] === ParamMode.Immediate ? pos[pc + 1] : pos[pos[pc + 1]];
+            const p2 = paramMode[1] === ParamMode.Immediate ? pos[pc + 2] : pos[pos[pc + 2]];
+            if (p1 === 0) {
+                pc = p2;
+            } else {
+                pc += 3;
+            }
+            break;
+        }
+        case 7: { // lt
+            const p1 = paramMode[0] === ParamMode.Immediate ? pos[pc + 1] : pos[pos[pc + 1]];
+            const p2 = paramMode[1] === ParamMode.Immediate ? pos[pc + 2] : pos[pos[pc + 2]];
+            if (p1 < p2) {
+                pos[pos[pc + 3]] = 1;
+            } else {
+                pos[pos[pc + 3]] = 0;
+            }
+            pc += 4;
+            break;
+        }
+        case 8: { // eq
+            const p1 = paramMode[0] === ParamMode.Immediate ? pos[pc + 1] : pos[pos[pc + 1]];
+            const p2 = paramMode[1] === ParamMode.Immediate ? pos[pc + 2] : pos[pos[pc + 2]];
+            if (p1 === p2) {
+                pos[pos[pc + 3]] = 1;
+            } else {
+                pos[pos[pc + 3]] = 0;
+            }
+            pc += 4;
             break;
         }
         case 99: {
