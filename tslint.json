@@ -5,7 +5,8 @@
     ],
     "jsRules": {},
     "rules": {
-	"interface-name" : [true, "never-prefix"],
+	"interface-name" : false,
+	"interface-over-type-literal" : false,
 	"max-line-length" : [true, 140],
 	"no-console": false
     },
