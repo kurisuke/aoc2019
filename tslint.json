@@ -5,8 +5,10 @@
     ],
     "jsRules": {},
     "rules": {
+	"array-type" : false,
 	"interface-name" : false,
 	"interface-over-type-literal" : false,
+	"max-classes-per-file": [true, 5, "exclude-class-expressions"],
 	"max-line-length" : [true, 140],
 	"no-console": false
     },
