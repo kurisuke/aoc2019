@@ -12,7 +12,7 @@ function createHisto(ls: string) {
 
     // count occurences
     for (const c of ls) {
-        h[c] = h[c] === undefined ? 0 : h[c] + 1;
+        h[c] = h[c] === undefined ? 1 : h[c] + 1;
     }
 
     return h;
