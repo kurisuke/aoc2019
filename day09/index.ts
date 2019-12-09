@@ -94,7 +94,7 @@ class Intcode {
         }
     }
 
-    private getAddr(n: number, opcode: bigint, aIn: bigint) {
+    private addr(n: number, opcode: bigint, aIn: bigint) {
         const mode = opcode / BigInt(10 ** (n + 2)) % 10n;
         let aOut = 0n;
         switch (mode) {
@@ -118,21 +118,25 @@ class Intcode {
         return aOut;
     }
 
+    private p(n: number, opcode: bigint) {
+        return this.addr(n, opcode, this.pc + BigInt(n + 1));
+    }
+
     private op() {
         const opcode = this.mem.load(this.pc);
 
         switch (opcode % 100n) {
             case 1n: {
-                const p1 = this.mem.load(this.getAddr(0, opcode, this.pc + 1n));
-                const p2 = this.mem.load(this.getAddr(1, opcode, this.pc + 2n));
-                this.mem.store(this.getAddr(2, opcode, this.pc + 3n), p1 + p2);
+                const p1 = this.mem.load(this.p(0, opcode));
+                const p2 = this.mem.load(this.p(1, opcode));
+                this.mem.store(this.p(2, opcode), p1 + p2);
                 this.pc += 4n;
                 break;
             }
             case 2n: {
-                const p1 = this.mem.load(this.getAddr(0, opcode, this.pc + 1n));
-                const p2 = this.mem.load(this.getAddr(1, opcode, this.pc + 2n));
-                this.mem.store(this.getAddr(2, opcode, this.pc + 3n), p1 * p2);
+                const p1 = this.mem.load(this.p(0, opcode));
+                const p2 = this.mem.load(this.p(1, opcode));
+                this.mem.store(this.p(2, opcode), p1 * p2);
                 this.pc += 4n;
                 break;
                 break;
@@ -141,20 +145,20 @@ class Intcode {
                 if (this.inp.length === 0) { // no input, blocked
                     this.state = RunState.Blocked;
                 } else {
-                    this.mem.store(this.getAddr(0, opcode, this.pc + 1n), this.inp.shift()!);
+                    this.mem.store(this.p(0, opcode), this.inp.shift()!);
                     this.pc += 2n;
                 }
                 break;
             }
             case 4n: {
-                const p1 = this.mem.load(this.getAddr(0, opcode, this.pc + 1n));
+                const p1 = this.mem.load(this.p(0, opcode));
                 this.outp.push(p1);
                 this.pc += 2n;
                 break;
             }
             case 5n: { // jnz
-                const p1 = this.mem.load(this.getAddr(0, opcode, this.pc + 1n));
-                const p2 = this.mem.load(this.getAddr(1, opcode, this.pc + 2n));
+                const p1 = this.mem.load(this.p(0, opcode));
+                const p2 = this.mem.load(this.p(1, opcode));
                 if (p1 !== 0n) {
                     this.pc = p2;
                 } else {
@@ -163,8 +167,8 @@ class Intcode {
                 break;
             }
             case 6n: { // jz
-                const p1 = this.mem.load(this.getAddr(0, opcode, this.pc + 1n));
-                const p2 = this.mem.load(this.getAddr(1, opcode, this.pc + 2n));
+                const p1 = this.mem.load(this.p(0, opcode));
+                const p2 = this.mem.load(this.p(1, opcode));
                 if (p1 === 0n) {
                     this.pc = p2;
                 } else {
@@ -173,23 +177,23 @@ class Intcode {
                 break;
             }
             case 7n: { // lt
-                const p1 = this.mem.load(this.getAddr(0, opcode, this.pc + 1n));
-                const p2 = this.mem.load(this.getAddr(1, opcode, this.pc + 2n));
+                const p1 = this.mem.load(this.p(0, opcode));
+                const p2 = this.mem.load(this.p(1, opcode));
                 const res = p1 < p2 ? 1n : 0n;
-                this.mem.store(this.getAddr(2, opcode, this.pc + 3n), res);
+                this.mem.store(this.p(2, opcode), res);
                 this.pc += 4n;
                 break;
             }
             case 8n: { // eq
-                const p1 = this.mem.load(this.getAddr(0, opcode, this.pc + 1n));
-                const p2 = this.mem.load(this.getAddr(1, opcode, this.pc + 2n));
+                const p1 = this.mem.load(this.p(0, opcode));
+                const p2 = this.mem.load(this.p(1, opcode));
                 const res = p1 === p2 ? 1n : 0n;
-                this.mem.store(this.getAddr(2, opcode, this.pc + 3n), res);
+                this.mem.store(this.p(2, opcode), res);
                 this.pc += 4n;
                 break;
             }
             case 9n: { // modify relbase
-                const p1 = this.mem.load(this.getAddr(0, opcode, this.pc + 1n));
+                const p1 = this.mem.load(this.p(0, opcode));
                 this.relBase += p1;
                 this.pc += 2n;
                 break;
