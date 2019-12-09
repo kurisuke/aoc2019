@@ -118,25 +118,22 @@ class Intcode {
         return aOut;
     }
 
-    private p(n: number, opcode: bigint) {
-        return this.addr(n, opcode, this.pc + BigInt(n + 1));
-    }
-
     private op() {
         const opcode = this.mem.load(this.pc);
+        const a = [0, 1, 2].map((n) => this.addr(n, opcode, this.pc + BigInt(n + 1)));
 
         switch (opcode % 100n) {
             case 1n: {
-                const p1 = this.mem.load(this.p(0, opcode));
-                const p2 = this.mem.load(this.p(1, opcode));
-                this.mem.store(this.p(2, opcode), p1 + p2);
+                const p1 = this.mem.load(a[0]);
+                const p2 = this.mem.load(a[1]);
+                this.mem.store(a[2], p1 + p2);
                 this.pc += 4n;
                 break;
             }
             case 2n: {
-                const p1 = this.mem.load(this.p(0, opcode));
-                const p2 = this.mem.load(this.p(1, opcode));
-                this.mem.store(this.p(2, opcode), p1 * p2);
+                const p1 = this.mem.load(a[0]);
+                const p2 = this.mem.load(a[1]);
+                this.mem.store(a[2], p1 * p2);
                 this.pc += 4n;
                 break;
                 break;
@@ -145,20 +142,20 @@ class Intcode {
                 if (this.inp.length === 0) { // no input, blocked
                     this.state = RunState.Blocked;
                 } else {
-                    this.mem.store(this.p(0, opcode), this.inp.shift()!);
+                    this.mem.store(a[0], this.inp.shift()!);
                     this.pc += 2n;
                 }
                 break;
             }
             case 4n: {
-                const p1 = this.mem.load(this.p(0, opcode));
+                const p1 = this.mem.load(a[0]);
                 this.outp.push(p1);
                 this.pc += 2n;
                 break;
             }
             case 5n: { // jnz
-                const p1 = this.mem.load(this.p(0, opcode));
-                const p2 = this.mem.load(this.p(1, opcode));
+                const p1 = this.mem.load(a[0]);
+                const p2 = this.mem.load(a[1]);
                 if (p1 !== 0n) {
                     this.pc = p2;
                 } else {
@@ -167,8 +164,8 @@ class Intcode {
                 break;
             }
             case 6n: { // jz
-                const p1 = this.mem.load(this.p(0, opcode));
-                const p2 = this.mem.load(this.p(1, opcode));
+                const p1 = this.mem.load(a[0]);
+                const p2 = this.mem.load(a[1]);
                 if (p1 === 0n) {
                     this.pc = p2;
                 } else {
@@ -177,23 +174,23 @@ class Intcode {
                 break;
             }
             case 7n: { // lt
-                const p1 = this.mem.load(this.p(0, opcode));
-                const p2 = this.mem.load(this.p(1, opcode));
+                const p1 = this.mem.load(a[0]);
+                const p2 = this.mem.load(a[1]);
                 const res = p1 < p2 ? 1n : 0n;
-                this.mem.store(this.p(2, opcode), res);
+                this.mem.store(a[2], res);
                 this.pc += 4n;
                 break;
             }
             case 8n: { // eq
-                const p1 = this.mem.load(this.p(0, opcode));
-                const p2 = this.mem.load(this.p(1, opcode));
+                const p1 = this.mem.load(a[0]);
+                const p2 = this.mem.load(a[1]);
                 const res = p1 === p2 ? 1n : 0n;
-                this.mem.store(this.p(2, opcode), res);
+                this.mem.store(a[2], res);
                 this.pc += 4n;
                 break;
             }
             case 9n: { // modify relbase
-                const p1 = this.mem.load(this.p(0, opcode));
+                const p1 = this.mem.load(a[0]);
                 this.relBase += p1;
                 this.pc += 2n;
                 break;
