@@ -40,12 +40,13 @@ function runPainter(prog: bigint[], initVal: bigint) {
     const visited: Set<string> = new Set();
     const pos = new Vec2D(0, 0);
     let lastDir = new Vec2D(0, 1);
+    grid[pos.asStr()] = initVal;
 
     while (true) {
         visited.add(pos.asStr());
 
         if (grid[pos.asStr()] === undefined) {
-            grid[pos.asStr()] = initVal; // white
+            grid[pos.asStr()] = 0n; // black
         }
 
         computer.writeInp(grid[pos.asStr()]);
