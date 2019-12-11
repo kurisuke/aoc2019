@@ -1,7 +1,7 @@
 import { readFile } from "fs";
 
-import { Vec2D } from "./coords";
 import { Intcode, RunState } from "./intcode";
+import { Vec2D } from "./vec2d";
 
 function doTurn(cmd: bigint, lastDir: Vec2D) {
     if (cmd === 0n) { // turn left
@@ -33,12 +33,8 @@ function doTurn(cmd: bigint, lastDir: Vec2D) {
     }
 }
 
-readFile("day11.input", "utf8", (error, data) => {
-    const origPos = data.toString().split(",").map( (num) => {
-        return BigInt(num);
-    });
-
-    const computer = new Intcode(origPos);
+function runPainter(prog: bigint[], initVal: bigint) {
+    const computer = new Intcode(prog);
 
     const grid: {[coords: string]: bigint} = {};
     const visited: Set<string> = new Set();
@@ -49,7 +45,7 @@ readFile("day11.input", "utf8", (error, data) => {
         visited.add(pos.asStr());
 
         if (grid[pos.asStr()] === undefined) {
-            grid[pos.asStr()] = 0n; // black
+            grid[pos.asStr()] = initVal; // white
         }
 
         computer.writeInp(grid[pos.asStr()]);
@@ -69,5 +65,41 @@ readFile("day11.input", "utf8", (error, data) => {
         }
     }
 
-    console.log(visited.size);
+    return {grid, visited};
+}
+
+function printGrid(grid: {[coords: string]: bigint}) {
+    // get corners of the painted grid
+    const [cMinX, cMinY, cMaxX, cMaxY] = Object.keys(grid).reduce((a, k) => {
+        const [cx, cy] = k.split(",").map((i) => Number(i));
+        a[0] = cx < a[0] ? cx : a[0];
+        a[1] = cy < a[1] ? cy : a[1];
+        a[2] = cx > a[2] ? cx : a[2];
+        a[3] = cy > a[3] ? cy : a[3];
+        return a;
+    }, [Infinity, Infinity, -Infinity, -Infinity]);
+
+    // print grid (invert y axis to start at the top)
+    for (let y = cMaxY; y >= cMinY; y--) {
+        let s = "";
+        for (let x = cMinX; x <= cMaxX; x++) {
+            const c = (new Vec2D(x, y)).asStr();
+            s += grid[c] === undefined || grid[c] === 0n ? " " : "#";
+        }
+        console.log(s);
+    }
+}
+
+readFile("day11.input", "utf8", (error, data) => {
+    const intcodeProg = data.toString().split(",").map( (num) => {
+        return BigInt(num);
+    });
+
+    // part 1
+    const result1 = runPainter(intcodeProg, 0n);
+    console.log(result1.visited.size);
+
+    // part 2
+    const result2 = runPainter(intcodeProg, 1n);
+    printGrid(result2.grid);
 });
