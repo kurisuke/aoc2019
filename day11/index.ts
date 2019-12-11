@@ -1,7 +1,7 @@
 import { readFile } from "fs";
 
-import { Intcode, RunState } from "./intcode";
-import { Vec2D } from "./vec2d";
+import { Intcode, RunState } from "../common/intcode";
+import { Vec2D } from "../common/vec2d";
 
 function doTurn(cmd: bigint, lastDir: Vec2D) {
     if (cmd === 0n) { // turn left
