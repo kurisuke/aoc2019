@@ -85,7 +85,7 @@ function printGrid(grid: {[coords: string]: bigint}) {
         let s = "";
         for (let x = cMinX; x <= cMaxX; x++) {
             const c = (new Vec2D(x, y)).asStr();
-            s += grid[c] === undefined || grid[c] === 0n ? " " : "#";
+            s += grid[c] === undefined || grid[c] === 0n ? " " : "█";
         }
         console.log(s);
     }
