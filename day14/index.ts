@@ -69,6 +69,28 @@ function produce(reactions: Reactions, stockpile: Stockpile, required: Reactant)
 readFile("day14.input", "utf8", (error, data) => {
     const reactions = parseReactions(data.toString());
 
+    // part 1
     const stockpile: Stockpile = {};
     console.log(produce(reactions, stockpile, {name: "FUEL", qty: 1}));
+
+    // part 2
+    let fuelMin = 0;
+    let fuelMax = 2 ** 63;
+    const targetOre = 1000000000000;
+
+    while ((fuelMax - fuelMin) > 1) {
+        const pivot = Math.floor((fuelMax + fuelMin) / 2);
+        const stockpile2: Stockpile = {};
+        const ore = produce(reactions, stockpile2, {name: "FUEL", qty: pivot});
+        if (ore > targetOre) {
+            fuelMax = pivot;
+        } else if (ore < targetOre) {
+            fuelMin = pivot;
+        } else if (ore === targetOre) {
+            fuelMax = pivot;
+            fuelMin = pivot;
+        }
+    }
+
+    console.log(fuelMin);
 });
