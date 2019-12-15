@@ -4,9 +4,14 @@ class Vec2D {
     private _x: number;
     private _y: number;
 
-    constructor(x: number, y: number) {
-        this._x = x;
-        this._y = y;
+    constructor(x: number | string, y: number = 0) {
+        if (typeof x === "number") {
+            this._x = x;
+            this._y = y;
+        } else {
+            this._x = Number(x.split(",")[0]);
+            this._y = Number(x.split(",")[1]);
+        }
     }
 
     public get x() {
