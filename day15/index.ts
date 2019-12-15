@@ -63,6 +63,8 @@ function tryMoves(pos: Vec2D, computer: Intcode, maze: Maze,
                 }
                 case 1n: { // move was successful
                     path.push(dir);
+                    maze[newPos.asStr()] = ".";
+
                     tryMoves(newPos, computer, maze, visited, path, paths);
 
                     // when the moves are exhausted, move the robot back to the field before
@@ -72,6 +74,7 @@ function tryMoves(pos: Vec2D, computer: Intcode, maze: Maze,
                 }
                 case 2n: { // reached the end field
                     path.push(dir);
+                    maze[newPos.asStr()] = "o"; // oxygen system, for part 2
 
                     // add a new found path
                     paths.push([...path]);
@@ -88,11 +91,65 @@ function tryMoves(pos: Vec2D, computer: Intcode, maze: Maze,
     visited[pos.asStr()] = false;
 }
 
+function printMaze(maze: Maze) {
+    const [minX, minY, maxX, maxY] = Object.keys(maze).reduce(
+        (a, k) => {
+            const p = new Vec2D(k);
+            a[0] = p.x < a[0] ? p.x : a[0];
+            a[1] = p.y < a[1] ? p.y : a[1];
+            a[2] = p.x > a[2] ? p.x : a[2];
+            a[3] = p.y > a[3] ? p.y : a[3];
+            return a;
+        }, [Infinity, Infinity, -Infinity, -Infinity]);
+
+    for (let y = minY; y <= maxY; y++) {
+        let s = "";
+        for (let x = minX; x <= maxX; x++) {
+            const p = new Vec2D(x, y);
+            s += maze[p.asStr()] === undefined ? "#" : maze[p.asStr()];
+        }
+        console.log(s);
+    }
+}
+
+function oxygenIter(inMaze: Maze) {
+    const outMaze: Maze = {};
+    Object.keys(inMaze).forEach((ps) => {
+        switch (inMaze[ps]) {
+            case "#":  { // wall
+                outMaze[ps] = "#";
+                break;
+            }
+            case "o":  { // oxygen
+                outMaze[ps] = "o";
+                break;
+            }
+            case ".": { // empty
+                outMaze[ps] = ".";
+
+                // if a neighboring (NSWE) field has oxygen, it spreads to this field
+                const p = new Vec2D(ps);
+                const adjFields = [new Vec2D(p.x - 1, p.y), new Vec2D(p.x + 1, p.y),
+                                   new Vec2D(p.x, p.y - 1), new Vec2D(p.x, p.y + 1)];
+                for (const adj of adjFields) {
+                    if (inMaze[adj.asStr()] === "o") {
+                        outMaze[ps] = "o";
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+    });
+    return outMaze;
+}
+
 readFile("day15.input", "utf8", (error, data) => {
     const intcodeProg = data.toString().split(",").map( (num) => {
         return BigInt(num);
     });
 
+    // part 1
     const computer = new Intcode(intcodeProg);
     const maze: Maze = {};
     const visited: Visited = {};
@@ -105,4 +162,13 @@ readFile("day15.input", "utf8", (error, data) => {
 
     const minLength = paths.reduce((a, p) => a > p.length ? a : p.length, 0);
     console.log(minLength);
+
+    // part 2
+    let mins = 0;
+    let iMaze = maze;
+    while (Object.values(iMaze).indexOf(".") !== -1) {
+        iMaze = oxygenIter(iMaze);
+        mins++;
+    }
+    console.log(mins);
 });
