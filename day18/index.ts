@@ -14,7 +14,7 @@ type ScoreCache = { [id: string]: number };
 type GlobalState = {
     grid: Grid,
     cache: ScoreCache,
-    keysMax: number,
+    allKeys: string,
 };
 
 function cacheStr(pos: Coords, keysHeld: string[]) {
@@ -32,7 +32,7 @@ function sc(s: string): Coords {
     };
 }
 
-function reachableKeys(grid: Grid, initPos: Coords, keysHeld: string[]) {
+function reachableKeys(grid: Grid, initPos: Coords, keysHeld: string[], keysMax: number) {
     const visited: Set<string> = new Set();
     let frontier: Set<string> = new Set();
     frontier.add(cs(initPos));
@@ -73,11 +73,12 @@ function reachableKeys(grid: Grid, initPos: Coords, keysHeld: string[]) {
                     frontierNew.add(cs(neighbor));
                     if (keysHeld.indexOf(gridVal) === -1) { // don't add keys we already have
                         foundKeys.push({ id: gridVal, pos: neighbor, distance });
+                        if (foundKeys.length === keysMax) {
+                            return foundKeys;
+                        }
                     }
                 } else if (gridVal.charCodeAt(0) >= 0x41 && gridVal.charCodeAt(0) <= 0x5a) { // is a door
-                    // console.log("found door:", gridVal, "keysHeld:" + keysHeld.sort().join(""));
                     if (keysHeld.indexOf(gridVal.toLowerCase()) >= 0) { // move if we have the matching key
-                        // console.log("opened door");
                         frontierNew.add(cs(neighbor));
                     }
                 }
@@ -96,14 +97,13 @@ function reachableKeys(grid: Grid, initPos: Coords, keysHeld: string[]) {
 }
 
 function score(state: GlobalState, pos: Coords, keysHeld: string[]): number {
-    if (keysHeld.length === state.keysMax) {
-        // console.log(cacheStr(pos, keysHeld), 0);
+    if (keysHeld.length === state.allKeys.length) {
         return 0; // all keys found, valid path
     }
 
-    const nextKeys = reachableKeys(state.grid, pos, keysHeld);
+    const nextKeys = reachableKeys(state.grid, pos, keysHeld, state.allKeys.length - keysHeld.length);
+
     if (nextKeys.length === 0) {
-        // console.log(cacheStr(pos, keysHeld), Infinity);
         return Infinity; // dead end
     }
 
@@ -111,12 +111,10 @@ function score(state: GlobalState, pos: Coords, keysHeld: string[]): number {
         const keysHeldNew = [...keysHeld, nextKey.id];
         const cacheKey = cacheStr(nextKey.pos, keysHeldNew);
         if (state.cache[cacheKey] !== undefined) {
-            // console.log(cacheStr(pos, keysHeld), nextKey.distance + state.cache[cacheKey]);
             return nextKey.distance + state.cache[cacheKey];
         } else {
             const cacheVal = score(state, nextKey.pos, keysHeldNew);
             state.cache[cacheKey] = cacheVal;
-            // console.log(cacheStr(pos, keysHeld), nextKey.distance + cacheVal);
             return nextKey.distance + cacheVal;
         }
     });
@@ -126,8 +124,6 @@ function score(state: GlobalState, pos: Coords, keysHeld: string[]): number {
 
 function findStart(grid: Grid): Coords | undefined {
     const [xLen, yLen] = [grid[0]!.length, grid.length];
-    // console.log(xLen, yLen);
-
     for (let x = 0; x < xLen; x++) {
         for (let y = 0; y < yLen; y++) {
             if (grid[y][x] === "@") {
@@ -137,24 +133,50 @@ function findStart(grid: Grid): Coords | undefined {
     }
 }
 
-function findNumKeys(grid: Grid) {
+function findAllKeys(grid: Grid) {
     const [xLen, yLen] = [grid[0]!.length, grid.length];
-    // console.log(xLen, yLen);
-
-    let numKeys = 0;
-
+    let keys = "";
     for (let x = 0; x < xLen; x++) {
         for (let y = 0; y < yLen; y++) {
             if (/^[a-z]$/.test(grid[y][x])) {
-                numKeys++;
+                keys += grid[y][x];
             }
         }
     }
-
-    return numKeys;
+    return keys;
 }
 
-readFile("day18.test2", "utf8", (_, data) => {
+function splitMap(grid: Grid) {
+    const startPos = findStart(grid)!;
+
+    grid[startPos.x][startPos.y] = "#";
+    grid[startPos.y - 1][startPos.x] = "#";
+    grid[startPos.y + 1][startPos.x] = "#";
+    grid[startPos.y][startPos.x - 1] = "#";
+    grid[startPos.y][startPos.x + 1] = "#";
+
+    grid[startPos.y - 1][startPos.x - 1] = "@";
+    grid[startPos.y + 1][startPos.x - 1] = "@";
+    grid[startPos.y - 1][startPos.x + 1] = "@";
+    grid[startPos.y + 1][startPos.x + 1] = "@";
+
+    const sectorTopLeft = [{ x: 0, y: 0 }, { x: startPos.x, y: 0 }, { x: 0, y: startPos.y }, { x: startPos.x, y: startPos.y }];
+    const splitMaps = sectorTopLeft.map((tlCoord) => {
+        const newGrid: Grid = [];
+        for (let y = tlCoord.y; y <= tlCoord.y + startPos.y; y++) {
+            const tmp = [];
+            for (let x = tlCoord.x; x <= tlCoord.x + startPos.x; x++) {
+                tmp.push(grid[y][x]);
+            }
+            newGrid.push(tmp);
+        }
+        return newGrid;
+    });
+
+    return splitMaps;
+}
+
+readFile("day18.input", "utf8", (_, data) => {
     // read input into grid[y][x]
     const grid: Grid = [];
     for (const line of data.split("\n")) {
@@ -166,12 +188,32 @@ readFile("day18.test2", "utf8", (_, data) => {
     }
 
     const state: GlobalState = {
+        allKeys: findAllKeys(grid),
         cache: {},
         grid,
-        keysMax: findNumKeys(grid),
     };
 
-    // console.log(reachableKeys(grid, findStart(grid)!, []));
-    console.log(score(state, findStart(grid)!, []));
-    // console.log(state.cache);
+    // part 1
+    // console.log(score(state, findStart(grid)!, []));
+
+    // part 2
+    const splitMaps = splitMap(grid);
+
+    const subSteps = [];
+
+    for (const subGrid of splitMaps) {
+        const thisFieldKeys = findAllKeys(subGrid);
+        const otherFieldKeys = state.allKeys.split("").reduce((s, c) => thisFieldKeys.indexOf(c) === -1 ? s + c : s, "");
+
+        const subState: GlobalState = {
+            allKeys: state.allKeys,
+            cache: {},
+            grid: subGrid,
+        };
+
+        subSteps.push(score(subState, findStart(subGrid)!, otherFieldKeys.split("")));
+    }
+
+    console.log(subSteps);
+    console.log(subSteps.reduce((a, i) => a + i, 0));
 });
