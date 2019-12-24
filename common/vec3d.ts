@@ -5,10 +5,16 @@ class Vec3D {
     private _y: number;
     private _z: number;
 
-    constructor(x: number, y: number, z: number) {
-        this._x = x;
-        this._y = y;
-        this._z = z;
+    constructor(x: number | string, y: number = 0, z: number = 0) {
+        if (typeof x === "number") {
+            this._x = x;
+            this._y = y;
+            this._z = z;
+        } else {
+            this._x = Number(x.split(",")[0]);
+            this._y = Number(x.split(",")[1]);
+            this._z = Number(x.split(",")[2]);
+        }
     }
 
     public get x() {
@@ -46,7 +52,7 @@ class Vec3D {
     }
 
     public asObj() {
-        return {x: this._x, y: this._y, z: this._z};
+        return { x: this._x, y: this._y, z: this._z };
     }
 
     public asTup() {
