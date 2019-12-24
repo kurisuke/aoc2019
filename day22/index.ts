@@ -2,63 +2,53 @@ import { readFile } from "fs";
 
 type DealCmd =
     | {
-        type: "DEAL_NEW",
+        type: "inv",
     }
     | {
-        type: "DEAL_INC",
-        inc: number,
+        type: "inc",
+        k: bigint,
     }
     | {
-        type: "CUT_N",
-        n: number,
+        type: "cut",
+        k: bigint,
     };
 
-function dealNew(inS: number[]) {
-    const inStack = [...inS];
-    return inStack.reverse();
-}
+type Stack = { off: bigint, inc: bigint, mod: bigint };
 
-function dealInc(inStack: number[], inc: number) {
-    const outStack = [];
-    for (const _ of inStack) {
-        outStack.push(Infinity);
-    }
-
-    let outPos = 0;
-    for (const card of inStack) {
-        outStack[outPos] = card;
-        outPos = (outPos + inc) % inStack.length;
-    }
-    return outStack;
-}
-
-function cutN(inS: number[], n: number) {
-    const inStack = [...inS];
-    if (n > 0) {
-        const top = inStack.slice(0, n);
-        const bottom = inStack.slice(n);
-        return bottom.concat(top);
-    } else {
-        const top = inStack.slice(0, inStack.length + n);
-        const bottom = inStack.slice(inStack.length + n);
-        return bottom.concat(top);
-    }
-}
-
-function runCmds(stack: number[], cmds: DealCmd[]) {
-    for (const cmd of cmds) {
-        if (cmd.type === "DEAL_NEW") {
-            stack = dealNew(stack);
-        } else if (cmd.type === "DEAL_INC") {
-            stack = dealInc(stack, cmd.inc);
-        } else if (cmd.type === "CUT_N") {
-            stack = cutN(stack, cmd.n);
+function modPow(base: bigint, exp: bigint, m: bigint) {
+    let r = 1n;
+    while (exp > 0) {
+        if (base === 0n) {
+            return 0n;
         }
-        // console.log(cmd);
-        // console.log(stack);
+        if (mod(exp, 2n) === 1n) {
+            r = mod(r * base, m);
+        }
+        exp /= 2n;
+        base = mod(base * base, m);
     }
+    return r;
+}
 
-    return stack;
+function modInv(n: bigint, m: bigint) {
+    return modPow(n, m - 2n, m);
+}
+
+function mod(n: bigint, m: bigint) {
+    return ((n % m) + m) % m;
+}
+
+function transform(inStack: Stack, cmds: DealCmd[]) {
+    for (const cmd of cmds) {
+        if (cmd.type === "inv") {
+            inStack.inc = mod(-inStack.inc, inStack.mod);
+            inStack.off = mod(inStack.off + inStack.inc, inStack.mod);
+        } else if (cmd.type === "cut") {
+            inStack.off = mod(inStack.off + inStack.inc * cmd.k, inStack.mod);
+        } else if (cmd.type === "inc") {
+            inStack.inc = mod(inStack.inc * modInv(cmd.k, inStack.mod), inStack.mod);
+        }
+    }
 }
 
 function parseInput(lines: string[]) {
@@ -66,14 +56,14 @@ function parseInput(lines: string[]) {
     for (const line of lines) {
         // deal into new stack
         if (line.startsWith("deal into new stack")) {
-            cmds.push({ type: "DEAL_NEW" });
+            cmds.push({ type: "inv" });
         }
 
         // deal with increment
         if (line.startsWith("deal with increment")) {
             const parsedInc = line.match(/[\-0-9]+/);
             if (parsedInc !== null) {
-                cmds.push({ type: "DEAL_INC", inc: Number(parsedInc[0]!) });
+                cmds.push({ type: "inc", k: BigInt(parsedInc[0]!) });
             } else {
                 throw Error("Error parsing line: " + line.trimRight());
             }
@@ -82,7 +72,7 @@ function parseInput(lines: string[]) {
         if (line.startsWith("cut")) {
             const parsedN = line.match(/[\-0-9]+/);
             if (parsedN !== null) {
-                cmds.push({ type: "CUT_N", n: Number(parsedN[0]!) });
+                cmds.push({ type: "cut", k: BigInt(parsedN[0]!) });
             } else {
                 throw Error("Error parsing line: " + line.trimRight());
             }
@@ -95,11 +85,16 @@ function parseInput(lines: string[]) {
 readFile("day22.input", "utf8", (_, data) => {
     const cmds = parseInput(data.toString().split("\n"));
 
-    const stackIn = [];
-    for (let i = 0; i < 10007; i++) {
-        stackIn.push(i);
-    }
+    // part 1
 
-    const stackOut = runCmds(stackIn, cmds);
-    console.log(stackOut.indexOf(2019));
+    const stack: Stack = { off: 0n, inc: 1n, mod: 10007n };
+    transform(stack, cmds);
+
+    for (let i = 0n; i < stack.mod; i++) {
+        const v = mod(stack.off + stack.inc * i, stack.mod);
+        if (v === 2019n) {
+            console.log(i);
+            break;
+        }
+    }
 });
