@@ -97,4 +97,19 @@ readFile("day22.input", "utf8", (_, data) => {
             break;
         }
     }
+
+    // part 2
+    const stack2: Stack = { off: 0n, inc: 1n, mod: 119315717514047n };
+    transform(stack2, cmds);
+
+    const offDiff = stack2.off;
+    const incMul = stack2.inc;
+
+    const iter = 101741582076661n;
+
+    const incFinal = modPow(incMul, iter, stack2.mod);
+    const offFinal = mod(offDiff * (1n - modPow(incMul, iter, stack2.mod)) *
+        modInv(mod(1n - incMul, stack2.mod), stack2.mod), stack2.mod);
+
+    console.log(mod(offFinal + 2020n * incFinal, stack2.mod));
 });
