@@ -9,7 +9,7 @@ readFile("day21.input", "utf8", (_, data) => {
 
     const c = new Intcode(intcodeProg);
 
-    readFile("day21.jumpscript", "utf8", (__, js) => {
+    readFile("day21_2.jumpscript", "utf8", (__, js) => {
 
         c.writeInpAscii(js.toString());
 
