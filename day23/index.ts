@@ -8,6 +8,9 @@ function part1(intcodeProg: bigint[]) {
     const numComputers = 50;
     const comps = [];
 
+    let natEntry: undefined | QueueEntry;
+    let lastNatY: undefined | bigint;
+
     for (let i = 0; i < numComputers; i++) {
         comps.push(new Intcode(intcodeProg));
         comps[comps.length - 1]!.writeInp(BigInt(i));
@@ -27,9 +30,10 @@ function part1(intcodeProg: bigint[]) {
                     const x = c.readOutp()!;
                     const y = c.readOutp()!;
                     if (dest === 255n) {
-                        return y;
+                        natEntry = { dest: Number(dest), x, y };
+                    } else {
+                        sendQueue.push({ dest: Number(dest), x, y });
                     }
-                    sendQueue.push({ dest: Number(dest), x, y });
                 }
             }
         }
@@ -49,10 +53,26 @@ function part1(intcodeProg: bigint[]) {
             }
         }
 
-        // write -1 (no input) to all computers not written to
-        for (let i = 0; i < numComputers; i++) {
-            if (writtenTo.has(i) === false) {
+        if (writtenTo.size === 0 && natEntry !== undefined) {
+            // network is idle
+            comps[0]!.writeInp(natEntry.x);
+            comps[0]!.writeInp(natEntry.y);
+            if (lastNatY === natEntry.y) {
+                return lastNatY;
+            }
+            lastNatY = natEntry.y;
+            natEntry = undefined;
+
+            // write -1 to all other computers
+            for (let i = 1; i < numComputers; i++) {
                 comps[i]!.writeInp(-1n);
+            }
+        } else {
+            // write -1 (no input) to all computers not written to
+            for (let i = 0; i < numComputers; i++) {
+                if (writtenTo.has(i) === false) {
+                    comps[i]!.writeInp(-1n);
+                }
             }
         }
 
