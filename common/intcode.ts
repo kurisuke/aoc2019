@@ -76,12 +76,42 @@ class Intcode {
         this.inp.push(n);
     }
 
+    public writeInpAscii(s: string) {
+        s.split("").forEach((c) => this.writeInp(BigInt(c.charCodeAt(0))));
+    }
+
     public readOutp() {
         if (this.outp.length > 0) {
             return this.outp.shift()!;
         } else {
             return undefined;
         }
+    }
+
+    public readOutpAscii() {
+        let s = "";
+        while (true) {
+            const tmp = this.readOutp();
+            if (tmp === undefined) {
+                break;
+            } else {
+                s += String.fromCharCode(Number(tmp));
+            }
+        }
+        return s;
+    }
+
+    public readOutpAll() {
+        let a = [];
+        while (true) {
+            const tmp = this.readOutp();
+            if (tmp === undefined) {
+                break;
+            } else {
+                a.push(tmp)
+            }
+        }
+        return a;
     }
 
     public run() {
